@@ -1,0 +1,89 @@
+table을 collection
+row를 document
+column을 field
+
+create - use 디비이름
+db - 현재 사용중인 database
+show dbs - 데이터베이스 리스트를 확인
+show collections - collection 리스트를 확인.(테이블인듯) 또는 db.getCollectionNames()
+insert
+- db.books(collection).insert({title:"example1", author: "Lee", price: 100 })
+- db.books.insert([
+{title: "example2", author:"Lee", price:200},
+{title: "example3", author:"Lee", price:300},
+{title: "example4", author:"Lee", price:400}
+])
+mongodb는 schema-less 하므로 동일한 collection 내에 있더라도 document level의 다른 schema를 가질 수 있다.
+db.books.insert({title:"example5", author:"Lee", price:200, stock:0})
+-> 같은 collenction(테이블?)에 있더라도 다른 column을 가진 값을 가질수 있다는 뜻 같음.
+
+read - db.books.find() (select 문)
+read시 별도 지정하지 않은 _id값이 있는데 고유한 필드임
+db.books.find().pretty() - 결과를 format에 맞게 출력.
+db.books.find({}, {_id:0, title: 1}) 0:false, 1:true true일때 해당 column 값을 select
+위 구문을 select 문으로 표현하면 select title from books
+find()의 첫번째 인자가 {}로 비어있으면 모두의(*) 의미, 두번째 인자를 projection이라고 부름.
+select title, author from books where price=200
+-> db.books.find({price:200}, {_id:0, title:1, author:1})
+select * from books where price > 100 and price <= 400
+-> db.books.find({price:{$gt:100, $lte:400}) //projection 생략가능
+비교연산자
+$eq	equals	지정 값과 일치하는 값
+$gt	greater than	지정 값보다 큰 값
+$gte	greater than or equals	지정 값보다 크거나 같은 값
+$lt	less than	지정 값보다 작은 값
+$lte	less than or equals	지정 값보다 작거나 같은 값
+$ne	not equal	지정 값과 일치하지 않는 값
+$in	in an array	지정 배열 안에 속하는 값
+$nin	none in an array	지정 배열 안에 속하지 않는 값
+논리연산자
+$or	지정 조건중 하나라도 true이면 true
+$and	모든 지정 조건이 true이면 true
+$not	지정 조건이 false이면 true, true이면 false
+$nor	모든 지정 조건이 false이면 true
+price가 200보다 작거나 stock이 0인 document를 select한다.
+db.books.find({$or:[{price:{$lt:200}}, {stock:0}]})
+정규표현식. 다음은 title이 /Example[1-2]/에 일치하는 document를 select한다.
+db.books.find({title:/Example[1-2]/})
+
+update
+update books set author ="kim" where price>200
+-> db.books.update({price:{$gt:200}},
+{$set:{author:"Kim"}},
+{multi:true}) //일치하는 값 모두 변경, 생략시 검색되는첫번째값만 변경
+$inc	field의 value를 지정한 수만큼 증가시킨다.
+$rename	field 이름을 rename한다.
+$setOnInsert	update()의 upsert가 true로 설정되었을 경우, document가 insert될 때의 field value를 설정한다.
+$set	update할 field의 value를 설정한다.
+$unset	document에서 설정된 field를 삭제한다
+$min	설정값이 field value보다 작은 경우만 update한다.
+$max	설정값이 field value보다 큰 경우만 update한다.
+$currentDate	현재 시간을 설정한다
+다음은 author가 kim인 document의 price field value를 -50 증가시킨다
+db.books.update({author:"kim"} {$inc:{price:-50}})
+다음은 모든 document의 field name을 ttle에서 title로 rename한다.
+db.books.update({}, $rename:{"ttle":"title"}}, {multi:true})
+다음은 author가 park인 document의 title을 example4로 update한다. 이때 query criteria({author:"park})에 매칭되는 document가 없으면 upsert:true에 의해 새로운 document가 insert 된다.
+db.books.update(
+{author:"park"},
+{$set: {title:"example4"},
+ $setOnInsert: {price:100}},
+{upsert:true}) //update + insert의 의미.
+다음은 books collection의 첫번째 document의 author, price field를 삭제한다.
+db.books.update( {}, {$unset: {author:"",price:0}})
+다음은 dateEntered field value와 $min의 value로 설정한 dateEntered field value(설정값)를 비교하여 설정값이 field value보다 작은 경우 설정값으로 field value를 update한다.
+db.test.insert([
+  { "title": "Example1", price: 100, dateEntered: new Date(Date.now()) },
+  { "title": "Example2", price: 200, dateEntered: new Date(Date.now()) }
+])
+db.test.update(
+  {  },
+  { $min: { dateEntered: new Date("2016-07-01") } }
+)
+
+delete
+다음은 price가 200보다 큰 모든 document를 삭제한다.
+db.books.remove( {price:{$gt:200}})
+db.books.remove({}) - 모든 document삭제
+db.books.drop() - collection 삭제
+use db , db.dropDatabase(); - database 삭제

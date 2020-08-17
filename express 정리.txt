@@ -1,0 +1,12 @@
+app.(path, 콜백)
+
+get함수는 routing 기능.
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+-> 의미는 localhost:3000/(/는 생략가능)이 호출 됬을때 Hello World!를 출력하라는 의미. /page라고 입력하면 그에따른 수행을 함.
+즉 우리가 이전에 구현했던 if('/') 와 동일한 의미.
+위가 새로운 표현
+app.get('/', function(req, res) {
+  return res.send('Hello World!')
+})
